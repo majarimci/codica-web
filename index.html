@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity Web Player | Codica</title>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
+    <link rel="manifest" href="manifest.webmanifest">
+  </head>
+  <body class="template-loading">
+    <div id="unity-container">
+      <canvas id="unity-canvas" width=1920 height=1080 tabindex="-1"></canvas>
+      
+      <!-- REPLACE THE OLD LOADING BAR WITH THIS ENHANCED VERSION -->
+      <div id="unity-loading-bar">
+        <div class="loading-character-container">
+          <div class="loading-lightbulb pulse">
+            <img src="TemplateData/lightbulb.png" alt="Lightbulb" id="lightbulb-image">
+          </div>
+
+          <div class="loading-character">
+            <img src="TemplateData/tiger-character.png" alt="Codica Character" id="character-image">
+          </div>
+        </div>
+
+        <div class="loading-progress-container">
+          <div class="loading-progress-bar">
+            <div class="loading-progress-fill" id="loading-progress-fill"></div>
+          </div>
+        </div>
+
+        <div class="loading-text" id="loading-text">در حال بارگذاری...</div>
+        <div class="loading-percentage" id="loading-percentage">۰%</div>
+      </div>
+      
+      <div id="unity-warning"> </div>
+    </div>
+    <script>
+      window.addEventListener("load", function () {
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.register("ServiceWorker.js");
+        }
+      });
+
+      var container = document.querySelector("#unity-container");
+      var canvas = document.querySelector("#unity-canvas");
+      var loadingBar = document.querySelector("#unity-loading-bar");
+      var progressBarFull = document.querySelector("#loading-progress-fill"); // Updated selector
+      var warningBanner = document.querySelector("#unity-warning");
+
+      // Keep the existing unityShowBanner function as-is
+      function unityShowBanner(msg, type) {
+        function updateBannerVisibility() {
+          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+        }
+        var div = document.createElement('div');
+        div.innerHTML = msg;
+        warningBanner.appendChild(div);
+        if (type == 'error') div.style = 'background: red; padding: 10px;';
+        else {
+          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
+          setTimeout(function() {
+            warningBanner.removeChild(div);
+            updateBannerVisibility();
+          }, 5000);
+        }
+        updateBannerVisibility();
+      }
+
+      // ADD ENHANCED LOADING FUNCTIONS
+      function toPersianNumbers(num) {
+        const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+        return num.toString().split('').map(digit => persianNumbers[parseInt(digit)] || digit).join('');
+      }
+
+      class LightbulbAnimator {
+        constructor() {
+          this.lightbulb = document.querySelector('.loading-lightbulb');
+          this.animations = ['glow', 'flicker', 'pulse'];
+          this.currentAnimation = 0;
+          this.animationInterval = null;
+        }
+
+        start() {
+          this.setAnimation('pulse');
+          if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            this.animationInterval = setInterval(() => {
+              this.nextAnimation();
+            }, 4000);
+          }
+        }
+
+        setAnimation(animationType) {
+          if (this.lightbulb) {
+            this.animations.forEach(anim => {
+              this.lightbulb.classList.remove(anim);
+            });
+            this.lightbulb.classList.add(animationType);
+          }
+        }
+
+        nextAnimation() {
+          this.currentAnimation = (this.currentAnimation + 1) % this.animations.length;
+          this.setAnimation(this.animations[this.currentAnimation]);
+        }
+
+        stop() {
+          if (this.animationInterval) {
+            clearInterval(this.animationInterval);
+            this.animationInterval = null;
+          }
+        }
+      }
+
+      function updateEnhancedLoadingProgress(progress) {
+        const progressFill = document.getElementById('loading-progress-fill');
+        const loadingText = document.getElementById('loading-text');
+        const loadingPercentage = document.getElementById('loading-percentage');
+
+        if (progressFill && loadingText && loadingPercentage) {
+          progressFill.style.width = `${progress * 100}%`;
+
+          const percentage = Math.round(progress * 100);
+          const persianPercentage = toPersianNumbers(percentage);
+          loadingPercentage.textContent = `${persianPercentage}%`;
+
+          let message = 'در حال بارگذاری...';
+
+          if (progress < 0.1) {
+            message = 'آغاز بارگذاری...';
+          } else if (progress < 0.25) {
+            message = 'بارگذاری فایل‌های اصلی...';
+          } else if (progress < 0.5) {
+            message = 'آماده‌سازی گرافیک‌ها...';
+          } else if (progress < 0.75) {
+            message = 'بارگذاری شخصیت‌ها...';
+          } else if (progress < 0.9) {
+            message = 'آماده‌سازی نهایی...';
+          } else if (progress < 0.99) {
+            message = 'تقریباً تمام شد...';
+          } else {
+            message = 'آماده برای شروع!';
+          }
+
+          loadingText.textContent = message;
+        }
+      }
+
+      function setupImageLoading() {
+        const characterImg = document.getElementById('character-image');
+        const lightbulbImg = document.getElementById('lightbulb-image');
+
+        [characterImg, lightbulbImg].forEach((img, index) => {
+          if (img) {
+            img.onerror = function() {
+              console.log(`Image ${index} failed to load, using fallback`);
+              this.style.display = 'none';
+              const fallback = document.createElement('div');
+              fallback.style.cssText = `
+                width: ${index === 0 ? '140px' : '70px'}; 
+                height: ${index === 0 ? '140px' : '70px'}; 
+                border-radius: 50%;
+                background: ${index === 0 ? 'linear-gradient(135deg, #FF8A65, #FF5722)' : 'linear-gradient(135deg, #FFEB3B, #FFC107)'};
+                display: flex; align-items: center; justify-content: center;
+                font-size: ${index === 0 ? '56px' : '28px'}; 
+                color: ${index === 0 ? 'white' : '#FF5722'};
+              `;
+              fallback.textContent = index === 0 ? '🐯' : '💡';
+              this.parentNode.appendChild(fallback);
+            };
+          }
+        });
+      }
+
+      // Initialize enhanced loading
+      setupImageLoading();
+      const lightbulbAnimator = new LightbulbAnimator();
+      lightbulbAnimator.start();
+
+      // Keep your existing config as-is
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/bb0d9ecdb05db3e84da20bd14a4f84dc.loader.js";
+      var config = {
+        arguments: [],
+        dataUrl: buildUrl + "/c0eb39694d0f41f386aec609f7220656.data",
+        frameworkUrl: buildUrl + "/1af364aed65fdda5a2b5c84fbd206b04.framework.js",
+        codeUrl: buildUrl + "/7336b22d8b1dbbc45826e817fa29072a.wasm",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "Academy_Hamrah",
+        productName: "Codica",
+        productVersion: "1.1.2",
+        showBanner: unityShowBanner,
+      };
+
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        var meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+        document.getElementsByTagName('head')[0].appendChild(meta);
+      }
+
+      loadingBar.style.display = "flex"; // Changed to flex for enhanced layout
+
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+          // REPLACE the basic progress with enhanced version
+          updateEnhancedLoadingProgress(progress);
+
+          // Change lightbulb animation based on progress
+          if (progress > 0.5 && progress < 0.55) {
+            lightbulbAnimator.setAnimation('flicker');
+          } else if (progress > 0.8 && progress < 0.85) {
+            lightbulbAnimator.setAnimation('glow');
+          }
+
+        }).then((unityInstance) => {
+          lightbulbAnimator.stop();
+          updateEnhancedLoadingProgress(1);
+
+          setTimeout(() => {
+            if (loadingBar) {
+              loadingBar.style.transition = 'opacity 0.8s ease-out';
+              loadingBar.style.opacity = '0';
+
+              setTimeout(() => {
+                loadingBar.style.display = 'none';
+                document.body.classList.remove('template-loading');
+                document.body.classList.add('loaded');
+              }, 800);
+            }
+          }, 1200);
+        }).catch((message) => {
+          lightbulbAnimator.stop();
+          alert(message);
+        });
+      };
+      document.body.appendChild(script);
+    </script>
+  </body>
+</html>
