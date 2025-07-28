@@ -2,7 +2,7 @@ const cacheName = "Academy_Hamrah-Codica-1.1.2";
 const contentToCache = [
     "Build/bb0d9ecdb05db3e84da20bd14a4f84dc.loader.js",
     "Build/1af364aed65fdda5a2b5c84fbd206b04.framework.js",
-    "Build/5749e57362957a7c9151c329e1d015d8.data",
+    "Build/6b30428f4cc463c205a58befe80eb176.data",
     "Build/7336b22d8b1dbbc45826e817fa29072a.wasm",
     "TemplateData/style.css",
     // Add the new loading screen images
