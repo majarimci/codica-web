@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#231F20">
+
+    <title>Unity WebGL Player | Codica</title>
+
+    <!-- PWA assets -->
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="manifest" href="manifest.webmanifest">
+
+    <style>
+        /* ====================================================================
+           FIXED RESPONSIVE UNITY WEBGL TEMPLATE v3 - FULL DESKTOP CANVAS
+           Enhanced canvas sizing: Desktop fullscreen, Mobile optimized
+           NEW: Mobile Portrait Rotation Overlay System
+        ==================================================================== */
+
+        /* CSS CUSTOM PROPERTIES FOR RESPONSIVE SCALING */
+        :root {
+            --brand-primary: #64b5f6;
+            --brand-secondary: #42a5f5;
+            --brand-dark: #1976d2;
+
+            /* Responsive scaling variables */
+            --base-font-size: clamp(14px, 2.5vw, 22px);
+            --container-padding: clamp(10px, 3vw, 30px);
+            --element-spacing: clamp(15px, 4vw, 40px);
+            --character-size: clamp(80px, 15vw, 180px);
+            --lightbulb-size: clamp(30px, 6vw, 60px);
+            --progress-width: clamp(200px, 50vw, 400px);
+            --progress-height: clamp(12px, 2vw, 20px);
+
+            /* ENHANCED Canvas sizing variables - DESKTOP FULLSCREEN FIX */
+            --desktop-canvas-width: 100vw;              /* CHANGED: Full viewport width */
+            --desktop-canvas-height: 100vh;             /* CHANGED: Full viewport height */
+            --mobile-canvas-width: 100vw;
+            --mobile-canvas-height: 100vh;
+
+            /* NEW: Rotation overlay variables */
+            --rotation-overlay-bg: rgba(0, 0, 0, 0.99);
+            --rotation-rect-size: clamp(60px, 12vw, 120px);
+            --rotation-text-size: clamp(16px, 4vw, 24px);
+            --rotation-animation-duration: 2s;
+        }
+
+        /* FOUNDATION & RESET */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #231F20;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #ffffff;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        /* RESPONSIVE UNITY CONTAINER */
+        #unity-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            transform-origin: center center;
+            transition: transform 0.3s ease;
+        }
+
+        /* UNITY GAME WRAPPER - ENHANCED FOR DESKTOP FULLSCREEN */
+        #unity-game-wrapper {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* DESKTOP FULLSCREEN: Uses full viewport */
+            width: var(--desktop-canvas-width);
+            height: var(--desktop-canvas-height);
+            max-width: 100vw;                           /* CHANGED: Allow full width */
+            max-height: 100vh;                          /* CHANGED: Allow full height */
+            background: #231F20;
+            border-radius: 0;                           /* CHANGED: Remove rounded corners for fullscreen */
+            box-shadow: none;                           /* CHANGED: Remove shadow for fullscreen */
+            overflow: hidden;
+        }
+
+        /* MOBILE DEVICE ADJUSTMENTS - Keep mobile optimized */
+        .mobile #unity-game-wrapper {
+            width: var(--mobile-canvas-width);
+            height: var(--mobile-canvas-height);
+            max-width: 100vw;
+            max-height: 100vh;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        /* AUTO-ROTATE WITH ASPECT RATIO PRESERVATION */
+        @media screen and (orientation: portrait) {
+            #unity-container {
+                transform: rotate(90deg);
+                width: 100vh;
+                height: 100vw;
+                top: 50%;
+                left: 50%;
+                margin-top: calc(-50vw);
+                margin-left: calc(-50vh);
+            }
+        }
+
+        /* RESPONSIVE UNITY CANVAS - FILLS WRAPPER COMPLETELY */
+        #unity-canvas {
+            background: #231F20;
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+            border: none;
+            outline: none;
+            image-rendering: optimizeSpeed;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* ====================================================================
+           NEW: MOBILE PORTRAIT ROTATION OVERLAY SYSTEM
+        ==================================================================== */
+
+        /* Fullscreen rotation prompt overlay - FIXED POSITIONING */
+        #rotation-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            background: var(--rotation-overlay-bg);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999 !important;
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+            gap: clamp(30px, 8vw, 60px);
+            padding: var(--container-padding);
+            box-sizing: border-box;
+            /* CRITICAL: Prevent any transforms from affecting this overlay */
+            transform: none !important;
+            /* Ensure it's on top of everything including rotated content */
+            pointer-events: auto;
+        }
+
+        /* Show overlay when in portrait mode on mobile - ENHANCED */
+        .mobile.portrait #rotation-overlay {
+            display: flex !important;
+        }
+
+        .mobile.portrait #rotation-overlay.visible {
+            opacity: 1 !important;
+        }
+
+        /* CRITICAL: Override any inherited transforms on mobile portrait */
+        @media screen and (max-width: 767px) and (orientation: portrait) {
+            #rotation-overlay {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                transform: none !important;
+                margin: 0 !important;
+                z-index: 99999 !important;
+            }
+        }
+
+        /* Animated rotating rectangle */
+        .rotation-device {
+            width: var(--rotation-rect-size);
+            height: calc(var(--rotation-rect-size) * 1.6);
+            border: 3px solid #ffffff;
+            border-radius: clamp(8px, 2vw, 16px);
+            position: relative;
+            animation: rotateDevice var(--rotation-animation-duration) ease-in-out infinite;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.1) 0%, 
+                rgba(255, 255, 255, 0.05) 50%, 
+                rgba(255, 255, 255, 0.1) 100%);
+            box-shadow: 
+                0 0 20px rgba(255, 255, 255, 0.3),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
+            transform-origin: center center;
+        }
+
+        /* Device screen simulation inside rectangle */
+        .rotation-device::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            right: 10%;
+            bottom: 20%;
+            background: linear-gradient(135deg, #00BCD4 0%, #0097A7 100%);
+            border-radius: clamp(4px, 1vw, 8px);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Device home button simulation */
+        .rotation-device::after {
+            content: '';
+            position: absolute;
+            bottom: 8%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20%;
+            height: 6%;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Rotation instruction text */
+        .rotation-text {
+            color: #ffffff;
+            font-size: var(--rotation-text-size);
+            font-weight: 600;
+            text-align: center;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            letter-spacing: 0.5px;
+            line-height: 1.4;
+            animation: textPulse 3s ease-in-out infinite;
+            max-width: 80%;
+        }
+
+        /* Secondary instruction text */
+        .rotation-subtext {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: calc(var(--rotation-text-size) * 0.75);
+            font-weight: 400;
+            text-align: center;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+            margin-top: clamp(10px, 3vw, 20px);
+            opacity: 0.9;
+            animation: textFade 4s ease-in-out infinite;
+        }
+
+        /* Rotation arrow indicator */
+        .rotation-arrow {
+            position: absolute;
+            top: 50%;
+            right: calc(-1 * var(--rotation-rect-size) * 0.8);
+            transform: translateY(-50%);
+            font-size: calc(var(--rotation-rect-size) * 0.4);
+            color: #ffffff;
+            animation: arrowBounce 2s ease-in-out infinite;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        /* DEVICE SPECIFIC CANVAS SIZING - ENHANCED FOR DESKTOP */
+
+        /* Large desktop screens - FULLSCREEN */
+        @media screen and (min-width: 1920px) and (orientation: landscape) {
+            :root {
+                --desktop-canvas-width: 100vw;          /* CHANGED: Full viewport */
+                --desktop-canvas-height: 100vh;         /* CHANGED: Full viewport */
+            }
+        }
+
+        /* Medium desktop screens - FULLSCREEN */
+        @media screen and (min-width: 1024px) and (max-width: 1919px) and (orientation: landscape) {
+            :root {
+                --desktop-canvas-width: 100vw;          /* CHANGED: Full viewport */
+                --desktop-canvas-height: 100vh;         /* CHANGED: Full viewport */
+            }
+        }
+
+        /* Small desktop/tablet screens - FULLSCREEN */
+        @media screen and (min-width: 768px) and (max-width: 1023px) {
+            :root {
+                --desktop-canvas-width: 100vw;          /* CHANGED: Full viewport */
+                --desktop-canvas-height: 100vh;         /* CHANGED: Full viewport */
+            }
+        }
+
+        /* Mobile landscape (when rotated) */
+        @media screen and (max-width: 767px) and (orientation: landscape) {
+            .mobile #unity-game-wrapper {
+                width: 100vw;
+                height: 100vh;
+                max-width: 100vw;
+                max-height: 100vh;
+            }
+        }
+
+        /* Mobile portrait (before rotation) */
+        @media screen and (max-width: 767px) and (orientation: portrait) {
+            .mobile #unity-game-wrapper {
+                width: 90vw;
+                height: 50vh;
+            }
+        }
+
+        /* Ultra-wide monitors - FULLSCREEN */
+        @media screen and (min-aspect-ratio: 21/9) {
+            :root {
+                --desktop-canvas-width: 100vw;          /* CHANGED: Full viewport */
+                --desktop-canvas-height: 100vh;         /* CHANGED: Full viewport */
+            }
+        }
+
+        /* LOADING SCREEN - POSITIONED RELATIVE TO CONTAINER */
+        #unity-loading-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #00BCD4 0%, #00ACC1 25%, #0097A7 50%, #00838F 100%);
+            z-index: 9999;
+            font-family: 'Arial', sans-serif;
+            padding: var(--container-padding);
+            box-sizing: border-box;
+            gap: var(--element-spacing);
+            pointer-events: none;
+        }
+
+        .template-loading #unity-loading-bar {
+            pointer-events: auto;
+        }
+
+        .loaded #unity-loading-bar {
+            display: none;
+        }
+
+        .template-loading #unity-canvas {
+            opacity: 0;
+        }
+
+        .loaded #unity-canvas {
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        /* RESPONSIVE CHARACTER & LIGHTBULB CONTAINER */
+        .loading-character-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            transform-origin: center center;
+        }
+
+        .loading-lightbulb {
+            width: var(--lightbulb-size);
+            height: var(--lightbulb-size);
+            margin-bottom: calc(var(--lightbulb-size) * -0.15);
+            margin-left: calc(var(--character-size) * 0.4);
+            position: relative;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: rotate(20deg);
+        }
+
+        .loading-lightbulb img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+            animation: lightbulbGlow 2s ease-in-out infinite;
+        }
+
+        .loading-character {
+            width: var(--character-size);
+            height: var(--character-size);
+            background: rgba(217, 255, 255, 0.95);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow:
+                    0 8px 32px rgba(0, 0, 0, 0.15),
+                    0 0 0 4px rgba(255, 240, 252, 0.3);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .loading-character img {
+            width: calc(var(--character-size) * 1.1);
+            height: calc(var(--character-size) * 1.1);
+            object-fit: contain;
+            position: relative;
+            z-index: 2;
+            animation: characterBreathe 3s ease-in-out infinite;
+        }
+
+        .loading-character::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg,
+            transparent 30%,
+            rgba(255, 255, 255, 0.1) 50%,
+            transparent 70%);
+            animation: backgroundShimmer 4s linear infinite;
+            z-index: 0;
+        }
+
+        /* RESPONSIVE PROGRESS BAR */
+        .loading-progress-container {
+            width: var(--progress-width);
+            max-width: 90vw;
+        }
+
+        .loading-progress-bar {
+            width: 100%;
+            height: var(--progress-height);
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: calc(var(--progress-height) * 0.6);
+            overflow: hidden;
+            position: relative;
+            box-shadow:
+                    inset 0 2px 4px rgba(0, 0, 0, 0.1),
+                    0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg,
+            #FFD54F 0%,
+            #FFCA28 25%,
+            #FFC107 50%,
+            #FFB300 75%,
+            #FF8F00 100%);
+            border-radius: inherit;
+            transition: width 0.1s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow:
+                    0 0 10px rgba(255, 193, 7, 0.5),
+                    inset 0 1px 2px rgba(255, 255, 255, 0.3);
+        }
+
+        .loading-progress-fill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.7) 40%,
+            rgba(255, 255, 255, 0.9) 50%,
+            rgba(255, 255, 255, 0.7) 60%,
+            transparent 100%);
+            animation: progressShine 2.5s ease-in-out infinite;
+            border-radius: inherit;
+        }
+
+        /* RESPONSIVE TEXT */
+        .loading-text {
+            color: #FFFFFF;
+            font-size: var(--base-font-size);
+            font-weight: 600;
+            text-align: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            letter-spacing: 0.5px;
+            direction: rtl;
+            font-family: 'Arial', 'Tahoma', sans-serif;
+            line-height: 1.4;
+        }
+
+        .loading-percentage {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: calc(var(--base-font-size) * 0.75);
+            font-weight: 500;
+            text-align: center;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            direction: rtl;
+        }
+
+        /* RESPONSIVE FULLSCREEN BUTTON */
+        #unity-fullscreen-button {
+            position: absolute;
+            top: clamp(10px, 3vw, 30px);
+            right: clamp(10px, 3vw, 30px);
+            width: clamp(40px, 8vw, 60px);
+            height: clamp(40px, 8vw, 60px);
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: clamp(6px, 1.5vw, 12px);
+            cursor: pointer;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            min-height: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #unity-fullscreen-button:before {
+            content: "⛶";
+            font-size: clamp(16px, 3vw, 24px);
+            color: white;
+        }
+
+        #unity-fullscreen-button:hover {
+            background: rgba(0, 0, 0, 0.9);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        /* RESPONSIVE WARNING DISPLAYS */
+        #unity-warning {
+            position: absolute;
+            top: clamp(15px, 4vw, 30px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 69, 0, 0.95);
+            color: white;
+            padding: clamp(8px, 2vw, 16px) clamp(12px, 3vw, 24px);
+            border-radius: clamp(4px, 1vw, 8px);
+            font-size: clamp(12px, 2.5vw, 16px);
+            font-weight: 500;
+            z-index: 2000;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        /* RESPONSIVE PERFORMANCE WARNING MODAL */
+        .performance-warning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            padding: var(--container-padding);
+        }
+
+        .warning-content {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            border-radius: clamp(8px, 2vw, 16px);
+            padding: clamp(20px, 5vw, 40px);
+            max-width: clamp(300px, 80vw, 500px);
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .warning-content h3 {
+            font-size: clamp(16px, 4vw, 24px);
+            margin-bottom: clamp(10px, 3vw, 20px);
+            font-weight: 600;
+        }
+
+        .warning-content p {
+            font-size: clamp(12px, 3vw, 16px);
+            margin-bottom: clamp(10px, 3vw, 20px);
+            line-height: 1.4;
+        }
+
+        .warning-content button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: clamp(8px, 2vw, 12px) clamp(16px, 4vw, 24px);
+            border-radius: clamp(4px, 1vw, 8px);
+            font-size: clamp(12px, 3vw, 16px);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+
+        .warning-content button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* ====================================================================
+           NEW: ROTATION OVERLAY ANIMATIONS
+        ==================================================================== */
+
+        /* Device rotation animation */
+        @keyframes rotateDevice {
+            0% {
+                transform: rotate(0deg) scale(1);
+            }
+            25% {
+                transform: rotate(0deg) scale(1.05);
+            }
+            50% {
+                transform: rotate(90deg) scale(1.1);
+            }
+            75% {
+                transform: rotate(90deg) scale(1.05);
+            }
+            100% {
+                transform: rotate(0deg) scale(1);
+            }
+        }
+
+        /* Text pulsing animation */
+        @keyframes textPulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.02);
+            }
+        }
+
+        /* Subtle text fading */
+        @keyframes textFade {
+            0%, 100% {
+                opacity: 0.9;
+            }
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        /* Arrow bouncing indicator */
+        @keyframes arrowBounce {
+            0%, 100% {
+                transform: translateY(-50%) translateX(0);
+            }
+            50% {
+                transform: translateY(-50%) translateX(10px);
+            }
+        }
+
+        /* ANIMATIONS - OPTIMIZED FOR PERFORMANCE */
+        @keyframes lightbulbGlow {
+            0%, 100% {
+                transform: scale(1);
+                filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2))
+                drop-shadow(0 0 20px rgba(255, 235, 59, 0.3));
+            }
+            50% {
+                transform: scale(1.08);
+                filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.3))
+                drop-shadow(0 0 30px rgba(255, 235, 59, 0.6));
+            }
+        }
+
+        @keyframes characterBreathe {
+            0%, 100% {
+                transform: scale(1) translateY(0);
+            }
+            50% {
+                transform: scale(1.03) translateY(-2px);
+            }
+        }
+
+        @keyframes backgroundShimmer {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes progressShine {
+            0% { left: -100%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { left: 100%; opacity: 0; }
+        }
+
+        @keyframes lightbulbFlicker {
+            0%, 94%, 96%, 100% {
+                opacity: 1;
+                filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2))
+                drop-shadow(0 0 20px rgba(255, 235, 59, 0.6));
+            }
+            95% {
+                opacity: 0.8;
+                filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2))
+                drop-shadow(0 0 10px rgba(255, 235, 59, 0.3));
+            }
+        }
+
+        @keyframes lightbulbPulse {
+            0%, 100% {
+                transform: scale(1);
+                filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2))
+                drop-shadow(0 0 15px rgba(255, 235, 59, 0.4));
+            }
+            25% {
+                transform: scale(1.12);
+                filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.3))
+                drop-shadow(0 0 25px rgba(255, 235, 59, 0.7));
+            }
+            50% {
+                transform: scale(1.06);
+                filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.25))
+                drop-shadow(0 0 30px rgba(255, 235, 59, 0.8));
+            }
+            75% {
+                transform: scale(1.1);
+                filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.3))
+                drop-shadow(0 0 20px rgba(255, 235, 59, 0.6));
+            }
+        }
+
+        /* Animation class selectors */
+        .loading-lightbulb.glow img {
+            animation: lightbulbGlow 2s ease-in-out infinite;
+        }
+
+        .loading-lightbulb.flicker img {
+            animation: lightbulbFlicker 3s ease-in-out infinite;
+        }
+
+        .loading-lightbulb.pulse img {
+            animation: lightbulbPulse 2.5s ease-in-out infinite;
+        }
+
+        /* ACCESSIBILITY - REDUCED MOTION */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+
+            #unity-container {
+                transition: none;
+            }
+
+            /* Disable rotation overlay animations for reduced motion */
+            .rotation-device {
+                animation: none;
+                transform: rotate(45deg);
+            }
+
+            .rotation-text,
+            .rotation-subtext {
+                animation: none;
+                opacity: 1;
+            }
+
+            .rotation-arrow {
+                animation: none;
+            }
+        }
+
+        /* HIGH DPI / RETINA DISPLAYS */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            #unity-canvas {
+                image-rendering: -webkit-optimize-contrast;
+                image-rendering: crisp-edges;
+            }
+        }
+
+        /* UTILITY CLASSES */
+        .hidden { display: none; }
+        .invisible { opacity: 0; }
+        .no-interaction { pointer-events: none; }
+
+        /* FOCUS STATES FOR ACCESSIBILITY */
+        #unity-fullscreen-button:focus,
+        .warning-content button:focus {
+            outline: 2px solid rgba(255, 255, 255, 0.8);
+            outline-offset: 2px;
+        }
+
+        /* OPTIONAL: Add these CSS classes for different desktop sizing modes */
+
+        /* Alternative: Windowed mode (like original) */
+        .windowed-mode #unity-game-wrapper {
+            width: min(90vw, 1200px);
+            height: min(70vh, 675px);
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Alternative: Aspect ratio preserved fullscreen */
+        .aspect-preserved #unity-game-wrapper {
+            width: 100vw;
+            height: calc(100vw * 9 / 16);  /* 16:9 aspect ratio */
+            max-height: 100vh;
+        }
+    </style>
+</head>
+
+<body class="template-loading">
+<!-- NEW: Mobile Portrait Rotation Overlay - MOVED OUTSIDE unity-container -->
+<div id="rotation-overlay">
+    <div class="rotation-device">
+        <!-- <div class="rotation-arrow">↻</div> -->
+    </div>
+    <div class="rotation-text">لطفاً دستگاه خود را بچرخانید</div>
+    <div class="rotation-subtext">برای تجربه‌ای بهتر، گوشی خود را به حالت افقی (Landscape) قرار دهید</div>
+</div>
+
+<div id="unity-container">
+    <!-- Unity Game Wrapper - Enhanced for Desktop Fullscreen -->
+    <div id="unity-game-wrapper">
+        <canvas id="unity-canvas" tabindex="-1"></canvas>
+    </div>
+
+    <!-- Responsive Codica Loading Screen -->
+    <div id="unity-loading-bar">
+        <div class="loading-character-container">
+            <div class="loading-lightbulb pulse">
+                <img src="TemplateData/lightbulb.png" alt="Lightbulb" id="lightbulb-image">
+            </div>
+
+            <div class="loading-character">
+                <img src="TemplateData/tiger-character.png" alt="Codica Character" id="character-image">
+            </div>
+        </div>
+
+        <div class="loading-progress-container">
+            <div class="loading-progress-bar">
+                <div class="loading-progress-fill" id="loading-progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="loading-text" id="loading-text">در حال بارگذاری...</div>
+        <div class="loading-percentage" id="loading-percentage">۰%</div>
+    </div>
+
+    <div id="unity-fullscreen-button"></div>
+    <div id="unity-warning"></div>
+
+    <!-- Performance warning -->
+    <div id="performance-warning" class="performance-warning">
+        <div class="warning-content">
+            <h3>⚠️ Performance Warning</h3>
+            <p>Your device may experience slower performance. Try closing other apps or using a desktop browser.</p>
+            <button onclick="acknowledgePerformanceWarning()">Continue</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ====================================================================
+    // FIXED RESPONSIVE AUTO-ROTATE UNITY WEBGL TEMPLATE v3
+    // ENHANCED CANVAS SIZING - DESKTOP FULLSCREEN & MOBILE OPTIMIZED
+    // NEW: Mobile Portrait Rotation Overlay System
+    // ====================================================================
+
+    // Enhanced global state management
+    const AutoRotateUnity = {
+        unityInstance: null,
+        orientationHandler: null,
+        performanceMonitor: null,
+        responsiveHandler: null,
+        rotationOverlay: null,
+        isMobileDevice: false,
+        isInitialized: false,
+        currentOrientation: 'landscape',
+        currentAspectRatio: 1.0
+    };
+
+    // ====================================================================
+    // NEW: MOBILE ROTATION OVERLAY CONTROLLER
+    // ====================================================================
+
+    class RotationOverlay {
+        constructor() {
+            this.overlay = document.getElementById('rotation-overlay');
+            this.isVisible = false;
+            this.fadeTimeout = null;
+            this.init();
+        }
+
+        init() {
+            console.log('📱 Initializing Mobile Rotation Overlay System');
+            
+            // Only initialize for mobile devices
+            if (!AutoRotateUnity.isMobileDevice) {
+                console.log('🖥️ Desktop detected - Rotation overlay disabled');
+                // Hide overlay completely on desktop
+                if (this.overlay) {
+                    this.overlay.style.display = 'none';
+                }
+                return;
+            }
+
+            this.setupOverlay();
+            
+            // Force initial positioning check
+            setTimeout(() => {
+                this.forceCorrectPositioning();
+            }, 100);
+            
+            console.log('✅ Mobile Rotation Overlay ready');
+        }
+
+        forceCorrectPositioning() {
+            if (!this.overlay) return;
+            
+            // Force correct positioning - this ensures overlay works even if CSS doesn't load properly
+            const styles = {
+                position: 'fixed',
+                top: '0px',
+                left: '0px',
+                right: '0px',
+                bottom: '0px',
+                width: '100vw',
+                height: '100vh',
+                zIndex: '99999',
+                transform: 'none',
+                margin: '0px',
+                padding: '20px',
+                boxSizing: 'border-box',
+                background: 'rgba(0, 0, 0, 0.95)',
+                display: 'none',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '40px'
+            };
+            
+            Object.assign(this.overlay.style, styles);
+            console.log('📱 Forced correct overlay positioning');
+        }
+
+        setupOverlay() {
+            if (!this.overlay) {
+                console.warn('⚠️ Rotation overlay element not found');
+                return;
+            }
+
+            // CRITICAL: Set up overlay positioning to be completely independent
+            this.overlay.style.position = 'fixed';
+            this.overlay.style.top = '0';
+            this.overlay.style.left = '0';
+            this.overlay.style.right = '0';
+            this.overlay.style.bottom = '0';
+            this.overlay.style.width = '100vw';
+            this.overlay.style.height = '100vh';
+            this.overlay.style.zIndex = '99999';
+            this.overlay.style.transform = 'none';
+            this.overlay.style.margin = '0';
+
+            // Prevent touch events from bubbling through overlay
+            this.overlay.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, { passive: false });
+
+            this.overlay.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, { passive: false });
+
+            // Prevent any clicks/taps from affecting game
+            this.overlay.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
+            console.log('✅ Rotation overlay setup complete with independent positioning');
+        }
+
+        show() {
+            if (!AutoRotateUnity.isMobileDevice || !this.overlay) return;
+
+            console.log('📱 Showing rotation overlay - Portrait mode detected');
+            
+            // Clear any existing fade timeout
+            if (this.fadeTimeout) {
+                clearTimeout(this.fadeTimeout);
+                this.fadeTimeout = null;
+            }
+
+            // Add portrait class to body for CSS styling
+            document.body.classList.add('portrait');
+            
+            // CRITICAL: Ensure overlay is positioned correctly and independently
+            this.overlay.style.position = 'fixed';
+            this.overlay.style.top = '0';
+            this.overlay.style.left = '0';
+            this.overlay.style.right = '0';
+            this.overlay.style.bottom = '0';
+            this.overlay.style.width = '100vw';
+            this.overlay.style.height = '100vh';
+            this.overlay.style.zIndex = '99999';
+            this.overlay.style.transform = 'none';
+            this.overlay.style.margin = '0';
+            
+            // Ensure overlay is displayed
+            this.overlay.style.display = 'flex';
+            
+            // Force reflow for smooth transition
+            this.overlay.offsetHeight;
+            
+            // Make visible with fade-in effect
+            setTimeout(() => {
+                this.overlay.classList.add('visible');
+                this.isVisible = true;
+            }, 50);
+
+            // Optional: Add vibration feedback for mobile devices
+            if ('vibrate' in navigator) {
+                navigator.vibrate([100, 50, 100]);
+            }
+        }
+
+        hide() {
+            if (!this.overlay || !this.isVisible) return;
+
+            console.log('📱 Hiding rotation overlay - Landscape mode detected');
+            
+            // Remove portrait class from body
+            document.body.classList.remove('portrait');
+            
+            // Start fade-out transition
+            this.overlay.classList.remove('visible');
+            this.isVisible = false;
+
+            // Hide overlay after transition completes
+            this.fadeTimeout = setTimeout(() => {
+                if (this.overlay) {
+                    this.overlay.style.display = 'none';
+                }
+                this.fadeTimeout = null;
+            }, 400); // Match CSS transition duration
+        }
+
+        handleOrientationChange(orientation) {
+            if (!AutoRotateUnity.isMobileDevice) return;
+
+            console.log(`🔄 Rotation Overlay - Orientation: ${orientation}`);
+            
+            if (orientation === 'portrait') {
+                this.show();
+            } else {
+                this.hide();
+            }
+        }
+
+        // Manual control methods for testing/debugging
+        forceShow() {
+            this.show();
+        }
+
+        forceHide() {
+            this.hide();
+        }
+
+        destroy() {
+            this.hide();
+            if (this.fadeTimeout) {
+                clearTimeout(this.fadeTimeout);
+                this.fadeTimeout = null;
+            }
+            this.overlay = null;
+        }
+    }
+
+    // ====================================================================
+    // ENHANCED RESPONSIVE HANDLER - DESKTOP FULLSCREEN OPTIMIZED
+    // ====================================================================
+
+    class ResponsiveHandler {
+        constructor() {
+            this.lastWidth = window.innerWidth;
+            this.lastHeight = window.innerHeight;
+            this.aspectRatio = this.calculateAspectRatio();
+            this.init();
+        }
+
+        init() {
+            console.log('📐 Initializing Enhanced Responsive Handler v3 - Desktop Fullscreen');
+            this.setupEventListeners();
+            this.updateResponsiveClasses();
+            this.optimizeCanvasContainer();
+        }
+
+        calculateAspectRatio() {
+            return window.innerWidth / window.innerHeight;
+        }
+
+        updateResponsiveClasses() {
+            const body = document.body;
+            const aspectRatio = this.calculateAspectRatio();
+
+            // Remove existing aspect ratio classes
+            body.classList.remove('ultra-wide', 'wide', 'standard', 'square', 'tall');
+
+            // Add new aspect ratio class
+            if (aspectRatio > 2.5) {
+                body.classList.add('ultra-wide');
+            } else if (aspectRatio > 1.7) {
+                body.classList.add('wide');
+            } else if (aspectRatio > 1.3) {
+                body.classList.add('standard');
+            } else if (aspectRatio > 0.9) {
+                body.classList.add('square');
+            } else {
+                body.classList.add('tall');
+            }
+
+            AutoRotateUnity.currentAspectRatio = aspectRatio;
+            console.log(`📐 Aspect ratio: ${aspectRatio.toFixed(2)}`);
+        }
+
+        optimizeCanvasContainer() {
+            const gameWrapper = document.getElementById('unity-game-wrapper');
+            if (!gameWrapper) return;
+
+            // Log current dimensions for debugging
+            const rect = gameWrapper.getBoundingClientRect();
+            console.log(`🎮 Canvas container: ${rect.width.toFixed(0)}x${rect.height.toFixed(0)}px`);
+            console.log(`🖥️ Desktop Fullscreen: ${AutoRotateUnity.isMobileDevice ? 'Disabled (Mobile)' : 'ENABLED'}`);
+
+            // Notify Unity about canvas size changes
+            if (AutoRotateUnity.unityInstance) {
+                try {
+                    const isPortrait = window.innerHeight > window.innerWidth;
+                    AutoRotateUnity.unityInstance.SendMessage('BrowserDetection', 'OnCanvasResized',
+                        JSON.stringify({
+                            containerWidth: rect.width,
+                            containerHeight: rect.height,
+                            viewportWidth: window.innerWidth,
+                            viewportHeight: window.innerHeight,
+                            pixelRatio: window.devicePixelRatio || 1,
+                            isPortrait: isPortrait,
+                            isMobile: AutoRotateUnity.isMobileDevice,
+                            isFullscreen: !AutoRotateUnity.isMobileDevice
+                        })
+                    );
+                } catch (e) {
+                    // Unity GameObject might not exist yet
+                }
+            }
+        }
+
+        handleResize() {
+            const currentWidth = window.innerWidth;
+            const currentHeight = window.innerHeight;
+
+            // Only update if significant change (prevents excessive updates)
+            if (Math.abs(currentWidth - this.lastWidth) > 10 ||
+                Math.abs(currentHeight - this.lastHeight) > 10) {
+
+                this.lastWidth = currentWidth;
+                this.lastHeight = currentHeight;
+
+                console.log(`📏 Viewport changed: ${currentWidth}x${currentHeight}px`);
+
+                this.updateResponsiveClasses();
+
+                // Delay canvas optimization to ensure CSS has updated
+                setTimeout(() => {
+                    this.optimizeCanvasContainer();
+                }, 50);
+
+                // Notify Unity about viewport changes
+                if (AutoRotateUnity.unityInstance) {
+                    try {
+                        AutoRotateUnity.unityInstance.SendMessage('BrowserDetection', 'OnViewportChanged',
+                            JSON.stringify({
+                                width: currentWidth,
+                                height: currentHeight,
+                                aspectRatio: this.calculateAspectRatio(),
+                                timestamp: Date.now(),
+                                isMobile: AutoRotateUnity.isMobileDevice,
+                                isFullscreen: !AutoRotateUnity.isMobileDevice
+                            })
+                        );
+                    } catch (e) {
+                        // Unity GameObject might not exist yet
+                    }
+                }
+            }
+        }
+
+        setupEventListeners() {
+            let resizeTimeout;
+
+            const handleResize = () => {
+                // Debounce resize events
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    this.handleResize();
+                }, 100);
+            };
+
+            window.addEventListener('resize', handleResize, { passive: true });
+            window.addEventListener('orientationchange', () => {
+                // Longer delay for orientation changes
+                setTimeout(() => {
+                    this.handleResize();
+                }, 300);
+            }, { passive: true });
+
+            // Listen for fullscreen changes
+            document.addEventListener('fullscreenchange', handleResize, { passive: true });
+            document.addEventListener('webkitfullscreenchange', handleResize, { passive: true });
+            document.addEventListener('mozfullscreenchange', handleResize, { passive: true });
+            document.addEventListener('msfullscreenchange', handleResize, { passive: true });
+        }
+    }
+
+    // ====================================================================
+    // ENHANCED ORIENTATION HANDLER WITH ROTATION OVERLAY INTEGRATION
+    // ====================================================================
+    class OrientationHandler {
+        constructor() {
+            this.currentOrientation = 'landscape';
+            this.orientationChangeTimeout = null;
+            this.init();
+        }
+
+        init() {
+            console.log('🔄 Initializing Auto-Rotate Orientation Handler with Rotation Overlay');
+            this.detectOrientation();
+            this.setupEventListeners();
+        }
+
+        detectOrientation() {
+            const isPortrait = window.innerHeight > window.innerWidth;
+            const newOrientation = isPortrait ? 'portrait' : 'landscape';
+
+            if (newOrientation !== this.currentOrientation) {
+                this.currentOrientation = newOrientation;
+                this.handleOrientationChange();
+            }
+        }
+
+        handleOrientationChange() {
+            console.log(`📱 Orientation detected: ${this.currentOrientation}`);
+
+            // Clear existing timeout
+            if (this.orientationChangeTimeout) {
+                clearTimeout(this.orientationChangeTimeout);
+            }
+
+            // Update rotation overlay based on orientation
+            if (AutoRotateUnity.rotationOverlay) {
+                AutoRotateUnity.rotationOverlay.handleOrientationChange(this.currentOrientation);
+            }
+
+            // Update responsive handler after orientation change with delay
+            this.orientationChangeTimeout = setTimeout(() => {
+                if (AutoRotateUnity.responsiveHandler) {
+                    AutoRotateUnity.responsiveHandler.handleResize();
+                }
+                this.orientationChangeTimeout = null;
+            }, 300);
+
+            // Notify Unity
+            if (AutoRotateUnity.unityInstance) {
+                try {
+                    AutoRotateUnity.unityInstance.SendMessage('BrowserDetection', 'OnOrientationChanged', 
+                        JSON.stringify({
+                            orientation: this.currentOrientation,
+                            timestamp: Date.now(),
+                            isMobile: AutoRotateUnity.isMobileDevice
+                        })
+                    );
+                } catch (e) {
+                    // Unity GameObject might not exist yet
+                }
+            }
+        }
+
+        setupEventListeners() {
+            const orientationHandler = () => {
+                setTimeout(() => {
+                    this.detectOrientation();
+                }, 100);
+            };
+
+            // Enhanced orientation change detection
+            window.addEventListener('orientationchange', () => {
+                // Multiple timeouts to handle iOS orientation change delays
+                setTimeout(() => this.detectOrientation(), 100);
+                setTimeout(() => this.detectOrientation(), 300);
+                setTimeout(() => this.detectOrientation(), 600);
+            }, { passive: true });
+
+            window.addEventListener('resize', orientationHandler, { passive: true });
+
+            // Initial detection with delay
+            setTimeout(() => this.detectOrientation(), 100);
+        }
+
+        // Manual orientation control for testing
+        getCurrentOrientation() {
+            return this.currentOrientation;
+        }
+
+        forceOrientationCheck() {
+            this.detectOrientation();
+        }
+    }
+
+    // ====================================================================
+    // PERFORMANCE MONITORING
+    // ====================================================================
+
+    class PerformanceMonitor {
+        constructor() {
+            this.metrics = {
+                frameCount: 0,
+                startTime: performance.now(),
+                lastFrameTime: performance.now(),
+                averageFPS: 60
+            };
+            this.isMonitoring = false;
+        }
+
+        start() {
+            this.isMonitoring = true;
+            this.monitorFPS();
+            console.log('📊 Performance monitoring started');
+        }
+
+        monitorFPS() {
+            if (!this.isMonitoring) return;
+
+            this.metrics.frameCount++;
+            const now = performance.now();
+            const deltaTime = now - this.metrics.lastFrameTime;
+
+            if (deltaTime >= 1000) {
+                this.metrics.averageFPS = Math.round((this.metrics.frameCount * 1000) / deltaTime);
+
+                if (this.metrics.averageFPS < 15 && this.metrics.frameCount > 60) {
+                    this.showPerformanceWarning();
+                }
+
+                this.metrics.frameCount = 0;
+                this.metrics.lastFrameTime = now;
+            }
+
+            requestAnimationFrame(() => this.monitorFPS());
+        }
+
+        showPerformanceWarning() {
+            const warning = document.getElementById('performance-warning');
+            if (warning) {
+                warning.style.display = 'flex';
+            }
+        }
+
+        stop() {
+            this.isMonitoring = false;
+        }
+    }
+
+    // ====================================================================
+    // DEVICE & BROWSER DETECTION (ENHANCED)
+    // ====================================================================
+
+    function detectDevice() {
+        const ua = navigator.userAgent;
+        AutoRotateUnity.isMobileDevice = /iPhone|iPad|iPod|Android|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+
+        const body = document.body;
+        const container = document.getElementById('unity-container');
+
+        if (AutoRotateUnity.isMobileDevice) {
+            body.classList.add('mobile');
+            container.classList.add('mobile-unity');
+            console.log('📱 Mobile device detected - Rotation overlay system enabled');
+        } else {
+            body.classList.add('desktop');
+            container.classList.add('desktop-unity');
+            console.log('🖥️ Desktop device detected - Using FULLSCREEN canvas sizing');
+        }
+
+        // Device-specific classes
+        if (/iPhone|iPad|iPod/i.test(ua)) {
+            body.classList.add('ios');
+        } else if (/Android/i.test(ua)) {
+            body.classList.add('android');
+        }
+
+        // Screen size classes
+        const screenWidth = screen.width;
+        if (screenWidth >= 1920) {
+            body.classList.add('large-screen');
+            console.log(`🖥️ Large screen: ${screenWidth}px - FULLSCREEN enabled`);
+        } else if (screenWidth >= 1024) {
+            body.classList.add('medium-screen');
+            console.log(`💻 Medium screen: ${screenWidth}px - FULLSCREEN enabled`);
+        } else {
+            body.classList.add('small-screen');
+            console.log(`📱 Small screen: ${screenWidth}px`);
+        }
+
+        console.log(`📐 Viewport: ${window.innerWidth}x${window.innerHeight}px`);
+        console.log(`📏 Screen: ${screen.width}x${screen.height}px`);
+    }
+
+    // ====================================================================
+    // LOADING SYSTEM
+    // ====================================================================
+
+    function toPersianNumbers(num) {
+        const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+        return num.toString().split('').map(digit => persianNumbers[parseInt(digit)] || digit).join('');
+    }
+
+    class LightbulbAnimator {
+        constructor() {
+            this.lightbulb = document.querySelector('.loading-lightbulb');
+            this.animations = ['glow', 'flicker', 'pulse'];
+            this.currentAnimation = 0;
+            this.animationInterval = null;
+        }
+
+        start() {
+            this.setAnimation('pulse');
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                this.animationInterval = setInterval(() => {
+                    this.nextAnimation();
+                }, 4000);
+            }
+        }
+
+        setAnimation(animationType) {
+            if (this.lightbulb) {
+                this.animations.forEach(anim => {
+                    this.lightbulb.classList.remove(anim);
+                });
+                this.lightbulb.classList.add(animationType);
+            }
+        }
+
+        nextAnimation() {
+            this.currentAnimation = (this.currentAnimation + 1) % this.animations.length;
+            this.setAnimation(this.animations[this.currentAnimation]);
+        }
+
+        stop() {
+            if (this.animationInterval) {
+                clearInterval(this.animationInterval);
+                this.animationInterval = null;
+            }
+        }
+    }
+
+    function updateCodicaLoadingProgress(progress) {
+        const progressFill = document.getElementById('loading-progress-fill');
+        const loadingText = document.getElementById('loading-text');
+        const loadingPercentage = document.getElementById('loading-percentage');
+
+        if (progressFill && loadingText && loadingPercentage) {
+            progressFill.style.width = `${progress * 100}%`;
+
+            const percentage = Math.round(progress * 100);
+            const persianPercentage = toPersianNumbers(percentage);
+            loadingPercentage.textContent = `${persianPercentage}%`;
+
+            let message = 'در حال بارگذاری...';
+
+            if (progress < 0.1) {
+                message = 'آغاز بارگذاری...';
+            } else if (progress < 0.25) {
+                message = 'بارگذاری فایل‌های اصلی...';
+            } else if (progress < 0.5) {
+                message = 'آماده‌سازی گرافیک‌ها...';
+            } else if (progress < 0.75) {
+                message = 'بارگذاری شخصیت‌ها...';
+            } else if (progress < 0.9) {
+                message = 'آماده‌سازی نهایی...';
+            } else if (progress < 0.99) {
+                message = 'تقریباً تمام شد...';
+            } else {
+                message = 'آماده برای شروع!';
+            }
+
+            loadingText.textContent = message;
+        }
+    }
+
+    function setupImageLoading() {
+        const characterImg = document.getElementById('character-image');
+        const lightbulbImg = document.getElementById('lightbulb-image');
+
+        [characterImg, lightbulbImg].forEach((img, index) => {
+            if (img) {
+                img.onerror = function() {
+                    console.log(`Image ${index} failed to load, using fallback`);
+                    this.style.display = 'none';
+                    const fallback = document.createElement('div');
+                    fallback.style.cssText = `
+                    width: ${index === 0 ? 'var(--character-size)' : 'var(--lightbulb-size)'}; 
+                    height: ${index === 0 ? 'var(--character-size)' : 'var(--lightbulb-size)'}; 
+                    border-radius: 50%;
+                    background: ${index === 0 ? 'linear-gradient(135deg, #FF8A65, #FF5722)' : 'linear-gradient(135deg, #FFEB3B, #FFC107)'};
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: calc(${index === 0 ? 'var(--character-size)' : 'var(--lightbulb-size)'} * 0.4); 
+                    color: ${index === 0 ? 'white' : '#FF5722'};
+                `;
+                    fallback.textContent = index === 0 ? '🐯' : '💡';
+                    this.parentNode.appendChild(fallback);
+                };
+            }
+        });
+    }
+
+    // ====================================================================
+    // UTILITY FUNCTIONS
+    // ====================================================================
+
+    function acknowledgePerformanceWarning() {
+        const warning = document.getElementById('performance-warning');
+        if (warning) {
+            warning.style.display = 'none';
+        }
+    }
+
+    // ====================================================================
+    // DYNAMIC SIZING MODE SWITCHER (OPTIONAL FEATURE)
+    // ====================================================================
+
+    function setSizingMode(mode) {
+        const body = document.body;
+
+        // Remove existing sizing classes
+        body.classList.remove('windowed-mode', 'aspect-preserved');
+
+        switch(mode) {
+            case 'fullscreen':
+                // Default mode - already set in CSS
+                console.log('🖥️ Desktop sizing: FULLSCREEN mode');
+                break;
+            case 'windowed':
+                body.classList.add('windowed-mode');
+                console.log('🖥️ Desktop sizing: WINDOWED mode');
+                break;
+            case 'aspect-preserved':
+                body.classList.add('aspect-preserved');
+                console.log('🖥️ Desktop sizing: ASPECT PRESERVED mode');
+                break;
+        }
+
+        // Trigger responsive handler update
+        if (AutoRotateUnity.responsiveHandler) {
+            setTimeout(() => {
+                AutoRotateUnity.responsiveHandler.handleResize();
+            }, 100);
+        }
+    }
+
+    // ====================================================================
+    // ROTATION OVERLAY CONTROL FUNCTIONS (FOR TESTING/DEBUGGING)
+    // ====================================================================
+
+    function showRotationOverlay() {
+        if (AutoRotateUnity.rotationOverlay) {
+            AutoRotateUnity.rotationOverlay.forceShow();
+        }
+    }
+
+    function hideRotationOverlay() {
+        if (AutoRotateUnity.rotationOverlay) {
+            AutoRotateUnity.rotationOverlay.forceHide();
+        }
+    }
+
+    function toggleRotationOverlay() {
+        if (AutoRotateUnity.rotationOverlay) {
+            if (AutoRotateUnity.rotationOverlay.isVisible) {
+                AutoRotateUnity.rotationOverlay.forceHide();
+            } else {
+                AutoRotateUnity.rotationOverlay.forceShow();
+            }
+        }
+    }
+
+    // ====================================================================
+    // UNITY INITIALIZATION WITH ENHANCED RESPONSIVE SUPPORT
+    // ====================================================================
+
+    function initializeUnity() {
+        console.log('🎮 Initializing FIXED Responsive Auto-Rotate Unity WebGL Template v3');
+        console.log('✅ Enhanced: DESKTOP FULLSCREEN & Mobile optimized canvas sizing');
+        console.log('✅ NEW: Mobile Portrait Rotation Overlay System');
+
+        // Initialize all systems
+        detectDevice();
+        AutoRotateUnity.responsiveHandler = new ResponsiveHandler();
+        AutoRotateUnity.orientationHandler = new OrientationHandler();
+        AutoRotateUnity.performanceMonitor = new PerformanceMonitor();
+        
+        // Initialize new rotation overlay system
+        AutoRotateUnity.rotationOverlay = new RotationOverlay();
+
+        setupImageLoading();
+
+        const lightbulbAnimator = new LightbulbAnimator();
+        lightbulbAnimator.start();
+
+        updateCodicaLoadingProgress(0);
+
+        AutoRotateUnity.performanceMonitor.start();
+
+        const buildUrl = "Build";
+        const loaderUrl = `${buildUrl}/bb0d9ecdb05db3e84da20bd14a4f84dc.loader.js`;
+
+        const config = {
+            dataUrl: `${buildUrl}/49d5a33cc9a794257ce003de9c2149e4.data`,
+            frameworkUrl: `${buildUrl}/c6cb37354805ea2183b38f02ff250d14.framework.js`,
+            codeUrl: `${buildUrl}/0dabd8b99e2c5ac32e2a35a55daedd70.wasm`,
+            streamingAssetsUrl: "StreamingAssets",
+            companyName: "Academy_Hamrah",
+            productName: "Codica",
+            productVersion: "2.0.7",
+            matchWebGLToCanvasSize: true,
+            devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2)
+        };
+
+        const loadingBar = document.getElementById('unity-loading-bar');
+        const canvas = document.getElementById('unity-canvas');
+        const fullscreenButton = document.getElementById('unity-fullscreen-button');
+
+        const script = document.createElement('script');
+        script.src = loaderUrl;
+        script.onload = () => {
+            createUnityInstance(canvas, config, (progress) => {
+                updateCodicaLoadingProgress(progress);
+
+                if (progress > 0.5 && progress < 0.55) {
+                    lightbulbAnimator.setAnimation('flicker');
+                } else if (progress > 0.8 && progress < 0.85) {
+                    lightbulbAnimator.setAnimation('glow');
+                }
+
+            }).then((instance) => {
+                AutoRotateUnity.unityInstance = window.unityInstance = instance;
+
+                lightbulbAnimator.stop();
+                updateCodicaLoadingProgress(1);
+
+                setTimeout(() => {
+                    if (loadingBar) {
+                        loadingBar.style.transition = 'opacity 0.8s ease-out';
+                        loadingBar.style.opacity = '0';
+
+                        setTimeout(() => {
+                            loadingBar.style.display = 'none';
+                            document.body.classList.remove('template-loading');
+                            document.body.classList.add('loaded');
+
+                            // Log final canvas dimensions
+                            const gameWrapper = document.getElementById('unity-game-wrapper');
+                            if (gameWrapper) {
+                                const rect = gameWrapper.getBoundingClientRect();
+                                console.log(`🎮 Final canvas container: ${rect.width.toFixed(0)}x${rect.height.toFixed(0)}px`);
+                                console.log(`📐 Canvas aspect ratio: ${(rect.width / rect.height).toFixed(2)}`);
+                                console.log(`🖥️ Desktop fullscreen: ${!AutoRotateUnity.isMobileDevice ? 'ENABLED' : 'N/A (Mobile device)'}`);
+                                console.log(`📱 Rotation overlay: ${AutoRotateUnity.isMobileDevice ? 'ENABLED' : 'N/A (Desktop device)'}`);
+                            }
+
+                            // Setup fullscreen button
+                            if (fullscreenButton) {
+                                fullscreenButton.onclick = () => instance.SetFullscreen(1);
+                                if (!AutoRotateUnity.isMobileDevice) {
+                                    fullscreenButton.style.display = 'flex';
+                                }
+                            }
+
+                            // Check initial orientation for rotation overlay
+                            if (AutoRotateUnity.rotationOverlay && AutoRotateUnity.orientationHandler) {
+                                const currentOrientation = AutoRotateUnity.orientationHandler.getCurrentOrientation();
+                                AutoRotateUnity.rotationOverlay.handleOrientationChange(currentOrientation);
+                            }
+
+                            // Notify Unity about responsive system
+                            setTimeout(() => {
+                                try {
+                                    const gameWrapper = document.getElementById('unity-game-wrapper');
+                                    const rect = gameWrapper ? gameWrapper.getBoundingClientRect() : { width: 0, height: 0 };
+
+                                    instance.SendMessage('BrowserDetection', 'OnTemplateReady', JSON.stringify({
+                                        autoRotate: true,
+                                        responsive: true,
+                                        rotationOverlay: AutoRotateUnity.isMobileDevice,
+                                        isDesktopFullscreen: !AutoRotateUnity.isMobileDevice,
+                                        isMobile: AutoRotateUnity.isMobileDevice,
+                                        currentOrientation: AutoRotateUnity.orientationHandler.currentOrientation,
+                                        aspectRatio: AutoRotateUnity.currentAspectRatio,
+                                        viewport: {
+                                            width: window.innerWidth,
+                                            height: window.innerHeight
+                                        },
+                                        canvasContainer: {
+                                            width: rect.width,
+                                            height: rect.height
+                                        },
+                                        timestamp: Date.now()
+                                    }));
+                                } catch (e) {
+                                    console.log('Unity messages sent (normal if GameObjects not found)');
+                                }
+                            }, 500);
+
+                            // Trigger initial responsive update
+                            setTimeout(() => {
+                                AutoRotateUnity.responsiveHandler.optimizeCanvasContainer();
+                            }, 100);
+
+                            AutoRotateUnity.isInitialized = true;
+                            console.log('🎮 Fixed Responsive Auto-Rotate Unity Template v3 loaded! 🔄📱💯');
+                            console.log('✅ Desktop: FULLSCREEN canvas sizing enabled');
+                            console.log('✅ Mobile: Optimized viewport utilization with rotation overlay');
+                        }, 800);
+                    }
+                }, 1200);
+
+            }).catch((message) => {
+                lightbulbAnimator.stop();
+                alert(`خطا در بارگذاری بازی: ${message}`);
+            });
+        };
+
+        script.onerror = () => {
+            alert('خطا در بارگذاری فایل‌های بازی');
+        };
+
+        document.body.appendChild(script);
+    }
+
+    // ====================================================================
+    // INITIALIZATION
+    // ====================================================================
+
+    function initialize() {
+        console.log('🚀 Starting FIXED Responsive Auto-Rotate Unity WebGL Template v3');
+        console.log('✅ DESKTOP FULLSCREEN: Canvas will fill entire browser window');
+        console.log('✅ MOBILE OPTIMIZED: Responsive sizing with rotation overlay system');
+        initializeUnity();
+    }
+
+    // Start when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initialize);
+    } else {
+        initialize();
+    }
+
+    // Global access for debugging and mode switching
+    window.AutoRotateUnity = AutoRotateUnity;
+    window.setSizingMode = setSizingMode;
+    window.showRotationOverlay = showRotationOverlay;
+    window.hideRotationOverlay = hideRotationOverlay;
+    window.toggleRotationOverlay = toggleRotationOverlay;
+
+    // Register service worker for PWA support
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('ServiceWorker.js').then(registration => {
+            console.log('🔧 Service Worker registered successfully:', registration.scope);
+        }).catch(error => {
+            console.log('⚠️ Service Worker registration failed:', error);
+        });
+    }
+</script>
+</body>
+</html>
