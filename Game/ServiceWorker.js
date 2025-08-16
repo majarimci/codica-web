@@ -1,9 +1,9 @@
 const cacheName = "Academy_Hamrah-Codica-2.0.7";
 const contentToCache = [
     "Build/bb0d9ecdb05db3e84da20bd14a4f84dc.loader.js",
-    "Build/f7b1d374bea25538b6be5e4f7287128e.framework.js",
-    "Build/9a8dfa717d2519aec25281d4a3aef079.data",
-    "Build/579d2aeb7d1563e9b2489954f5be027b.wasm",
+    "Build/e2bfb345caa29528336b45106614f0bb.framework.js",
+    "Build/12311b467546591df289293794f4e796.data",
+    "Build/851aa3ce1e2e32159da3d4db8f215acc.wasm",
     // Enhanced template CSS files
     "TemplateData/style.css",
     "TemplateData/orientation.css",
