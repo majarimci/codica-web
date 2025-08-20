@@ -35,4 +35,5 @@ com.unity.modules.unitywebrequesttexture@1.0.0
 com.unity.modules.unitywebrequestwww@1.0.0
 com.dee1.buildreport@0.0.1
 com.dee1.custombuildtool@0.0.1
+com.dee1.imagesizefixer@0.0.1
 com.unity.template.2d@7.0.3
